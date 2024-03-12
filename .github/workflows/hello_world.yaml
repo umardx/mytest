@@ -1,0 +1,46 @@
+name: Issue Comment
+
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  issue_comment:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  pull_request_commented:
+    # This job only runs for pull request comments
+    name: PR comment
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          echo A comment on PR $NUMBER
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+
+  issue_get_env:
+    # This job only runs for issue comments
+    name: Issue get env
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          echo '${{ toJSON(github.event) }}' | jq
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+
+  issue_commented:
+    # This job only runs for issue comments
+    name: Issue comment
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-20.04
+    needs:
+    - issue_get_env
+    steps:
+      - run: gh issue comment $ISSUE --body "Thank you for opening this issue!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.html_url }}
+    permissions:
+      issues: write
